@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Folio uses Face ID to protect access to your portfolio data.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Folio needs access to your photo library to import portfolio screenshots for AI-powered holdings extraction.</string>
+</dict>
+</plist>
