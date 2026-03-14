@@ -77,7 +77,7 @@ actor LLMService {
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
         let body: [String: Any] = [
-            "model": "claude-sonnet-4-20250514",
+            "model": "claude-sonnet-4-6-20250610",
             "max_tokens": 4096,
             "messages": [
                 [
@@ -128,7 +128,7 @@ actor LLMService {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = [
-            "model": "gpt-4o",
+            "model": "gpt-5.4",
             "max_tokens": 4096,
             "messages": [
                 [
@@ -170,7 +170,7 @@ actor LLMService {
     }
 
     private func callGemini(base64Image: String, apiKey: String) async throws -> [ExtractedHolding] {
-        let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=\(apiKey)")!
+        let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=\(apiKey)")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
