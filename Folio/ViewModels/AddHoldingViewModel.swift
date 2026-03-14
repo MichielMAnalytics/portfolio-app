@@ -19,6 +19,11 @@ final class AddHoldingViewModel {
     var cryptoSearchQuery: String = ""
     var cryptoSearchResults: [CoinSearchResult] = []
     var selectedCoin: CoinSearchResult?
+
+    var stockSearchQuery: String = ""
+    var stockSearchResults: [YahooSearchResult] = []
+    var selectedStock: YahooSearchResult?
+
     var isSearching = false
     var isLoadingPrice = false
     var errorMessage: String?
@@ -122,6 +127,68 @@ final class AddHoldingViewModel {
         )
     }
 
+    // MARK: - Stock/ETF Search (Yahoo Finance)
+
+    func searchStocks() {
+        searchTask?.cancel()
+
+        let query = stockSearchQuery.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else {
+            stockSearchResults = []
+            return
+        }
+
+        searchTask = Task {
+            isSearching = true
+            defer { isSearching = false }
+
+            do {
+                let results = try await YahooFinanceService.shared.search(query: query)
+                if !Task.isCancelled {
+                    stockSearchResults = Array(results.prefix(15))
+                }
+            } catch {
+                if !Task.isCancelled {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func selectStock(_ stock: YahooSearchResult) {
+        selectedStock = stock
+        name = stock.displayName
+        symbol = stock.symbol
+        exchange = stock.exchDisp ?? stock.exchange ?? ""
+        assetType = stock.assetType
+        stockSearchQuery = stock.displayName
+        stockSearchResults = []
+
+        Task {
+            await fetchStockPrice(symbol: stock.symbol)
+        }
+    }
+
+    func fetchStockPrice(symbol: String) async {
+        isLoadingPrice = true
+        defer { isLoadingPrice = false }
+
+        do {
+            if let quote = try await YahooFinanceService.shared.fetchQuote(symbol: symbol),
+               let price = quote.regularMarketPrice {
+                currentPrice = String(format: "%.2f", price)
+                if purchasePrice.isEmpty {
+                    purchasePrice = currentPrice
+                }
+                if let cur = quote.currency {
+                    purchaseCurrency = cur
+                }
+            }
+        } catch {
+            errorMessage = "Failed to fetch price: \(error.localizedDescription)"
+        }
+    }
+
     func reset() {
         name = ""
         symbol = ""
@@ -137,6 +204,9 @@ final class AddHoldingViewModel {
         cryptoSearchQuery = ""
         cryptoSearchResults = []
         selectedCoin = nil
+        stockSearchQuery = ""
+        stockSearchResults = []
+        selectedStock = nil
         errorMessage = nil
     }
 

@@ -139,12 +139,22 @@ final class PortfolioViewModel {
             lastRefreshDate = Date()
         }
 
+        // Refresh crypto prices via CoinGecko
+        await refreshCryptoPrices()
+
+        // Refresh stock/ETF/other prices via Yahoo Finance
+        await refreshStockPrices()
+
+        if let modelContext {
+            try? modelContext.save()
+        }
+    }
+
+    private func refreshCryptoPrices() async {
         let cryptoHoldings = holdings.filter { $0.assetType == .crypto }
         guard !cryptoHoldings.isEmpty else { return }
 
-        let coinIds = cryptoHoldings.compactMap { holding -> String? in
-            return holding.symbol.lowercased()
-        }
+        let coinIds = cryptoHoldings.compactMap { $0.symbol.lowercased() }
 
         do {
             let marketData = try await CoinGeckoService.shared.fetchMarketData(coinIds: coinIds)
@@ -161,12 +171,30 @@ final class PortfolioViewModel {
                     }
                 }
             }
+        } catch {
+            errorMessage = "Failed to refresh crypto prices: \(error.localizedDescription)"
+        }
+    }
 
-            if let modelContext {
-                try? modelContext.save()
+    private func refreshStockPrices() async {
+        let stockHoldings = holdings.filter { $0.assetType != .crypto && $0.assetType != .cash }
+        guard !stockHoldings.isEmpty else { return }
+
+        let symbols = Array(Set(stockHoldings.map { $0.symbol.uppercased() }))
+
+        do {
+            let quotes = try await YahooFinanceService.shared.fetchQuotes(symbols: symbols)
+
+            for holding in stockHoldings {
+                if let quote = quotes[holding.symbol.uppercased()],
+                   let price = quote.regularMarketPrice {
+                    holding.currentPrice = price
+                }
             }
         } catch {
-            errorMessage = "Failed to refresh prices: \(error.localizedDescription)"
+            let existing = errorMessage ?? ""
+            let stockError = "Failed to refresh stock prices: \(error.localizedDescription)"
+            errorMessage = existing.isEmpty ? stockError : "\(existing)\n\(stockError)"
         }
     }
 }

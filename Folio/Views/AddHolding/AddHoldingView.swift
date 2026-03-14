@@ -24,6 +24,8 @@ struct AddHoldingView: View {
 
             if viewModel.assetType == .crypto {
                 cryptoSearchSection
+            } else if viewModel.assetType == .stock || viewModel.assetType == .etf {
+                stockSearchSection
             }
 
             Section("Basic Information") {
@@ -185,6 +187,76 @@ struct AddHoldingView: View {
                             }
 
                             if viewModel.selectedCoin?.id == coin.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(FolioTheme.positive)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .listRowBackground(FolioTheme.cardBackground)
+    }
+
+    private var stockSearchSection: some View {
+        Section("Search Stock / ETF") {
+            TextField("Search by name or ticker...", text: $viewModel.stockSearchQuery)
+                .textInputAutocapitalization(.never)
+                .onChange(of: viewModel.stockSearchQuery) { _, _ in
+                    viewModel.searchStocks()
+                }
+
+            if viewModel.isSearching {
+                HStack {
+                    ProgressView()
+                    Text("Searching...")
+                        .font(.caption)
+                        .foregroundStyle(FolioTheme.labelGray)
+                }
+            }
+
+            if !viewModel.stockSearchResults.isEmpty {
+                ForEach(viewModel.stockSearchResults) { stock in
+                    Button {
+                        viewModel.selectStock(stock)
+                    } label: {
+                        HStack {
+                            Image(systemName: stock.assetType.sfSymbol)
+                                .font(.body)
+                                .foregroundStyle(stock.assetType.color)
+                                .frame(width: 24, height: 24)
+
+                            VStack(alignment: .leading) {
+                                Text(stock.displayName)
+                                    .font(.body)
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                HStack(spacing: 4) {
+                                    Text(stock.symbol)
+                                        .font(.caption)
+                                        .foregroundStyle(FolioTheme.labelGray)
+                                    if let exchDisp = stock.exchDisp {
+                                        Text("·")
+                                            .font(.caption)
+                                            .foregroundStyle(FolioTheme.labelGray)
+                                        Text(exchDisp)
+                                            .font(.caption)
+                                            .foregroundStyle(FolioTheme.labelGray)
+                                    }
+                                    if let typeDisp = stock.typeDisp {
+                                        Text("·")
+                                            .font(.caption)
+                                            .foregroundStyle(FolioTheme.labelGray)
+                                        Text(typeDisp)
+                                            .font(.caption)
+                                            .foregroundStyle(FolioTheme.labelGray)
+                                    }
+                                }
+                            }
+
+                            Spacer()
+
+                            if viewModel.selectedStock?.symbol == stock.symbol {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundStyle(FolioTheme.positive)
                             }
