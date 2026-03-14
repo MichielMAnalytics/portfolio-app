@@ -14,31 +14,35 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             DashboardView(viewModel: portfolioViewModel, currency: currency)
                 .tabItem {
-                    Label("Dashboard", systemImage: "chart.bar.fill")
+                    Label("Portfolio", systemImage: "house.fill")
                 }
                 .tag(0)
 
-            HoldingsListView(viewModel: portfolioViewModel, currency: currency)
+            ImportView(portfolioViewModel: portfolioViewModel)
                 .tabItem {
-                    Label("Holdings", systemImage: "list.bullet.rectangle.fill")
+                    Label("Import", systemImage: "square.and.arrow.down")
                 }
                 .tag(1)
 
-            ImportView(portfolioViewModel: portfolioViewModel)
-                .tabItem {
-                    Label("Import", systemImage: "square.and.arrow.down.fill")
-                }
-                .tag(2)
-
             SettingsView()
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label("Settings", systemImage: "gearshape")
                 }
-                .tag(3)
+                .tag(2)
         }
+        .tint(FolioTheme.positive)
         .onAppear {
             portfolioViewModel.setup(modelContext: modelContext)
+            configureTabBarAppearance()
         }
+    }
+
+    private func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor.black
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 }
 

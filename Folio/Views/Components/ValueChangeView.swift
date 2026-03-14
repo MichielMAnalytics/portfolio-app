@@ -9,33 +9,21 @@ struct ValueChangeView: View {
     var font: Font = .subheadline
 
     private var changeColor: Color {
-        if value > 0 { return .green }
-        if value < 0 { return .red }
-        return .secondary
-    }
-
-    private var arrowSymbol: String {
-        if value > 0 { return "arrow.up.right" }
-        if value < 0 { return "arrow.down.right" }
-        return "arrow.right"
+        if value > 0 { return FolioTheme.positive }
+        if value < 0 { return FolioTheme.negative }
+        return FolioTheme.labelGray
     }
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: arrowSymbol)
-                .font(.caption)
-                .foregroundStyle(changeColor)
-
+        HStack(spacing: 6) {
             if showValue {
-                Text(CurrencyFormatter.format(abs(value), currency: currency, showSign: false))
+                Text(CurrencyFormatter.format(value, currency: currency, showSign: true))
                     .font(font)
                     .foregroundStyle(changeColor)
             }
 
             if showPercentage {
-                Text("(\(CurrencyFormatter.formatPercentage(percentage)))")
-                    .font(font)
-                    .foregroundStyle(changeColor)
+                ValueChangeChip(percentage: percentage)
             }
         }
     }
@@ -45,15 +33,15 @@ struct ValueChangeChip: View {
     let percentage: Double
 
     private var changeColor: Color {
-        if percentage > 0 { return .green }
-        if percentage < 0 { return .red }
-        return .secondary
+        if percentage > 0 { return FolioTheme.positive }
+        if percentage < 0 { return FolioTheme.negative }
+        return FolioTheme.labelGray
     }
 
     private var backgroundColor: Color {
-        if percentage > 0 { return .green.opacity(0.15) }
-        if percentage < 0 { return .red.opacity(0.15) }
-        return .secondary.opacity(0.15)
+        if percentage > 0 { return FolioTheme.positiveBadgeBg }
+        if percentage < 0 { return FolioTheme.negativeBadgeBg }
+        return FolioTheme.chipBackground
     }
 
     var body: some View {
@@ -80,4 +68,5 @@ struct ValueChangeChip: View {
         }
     }
     .padding()
+    .background(FolioTheme.background)
 }

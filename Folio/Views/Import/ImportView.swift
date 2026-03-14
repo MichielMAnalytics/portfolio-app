@@ -13,7 +13,7 @@ struct ImportView: View {
                 VStack(spacing: 16) {
                     importCard(
                         icon: "camera.viewfinder",
-                        iconColor: .blue,
+                        iconColor: FolioTheme.positive,
                         title: "Screenshot Import",
                         description: "Take or select a screenshot of your portfolio. AI will extract your holdings automatically.",
                         buttonTitle: "Import from Screenshot"
@@ -23,7 +23,7 @@ struct ImportView: View {
 
                     importCard(
                         icon: "doc.text",
-                        iconColor: .green,
+                        iconColor: FolioTheme.positive,
                         title: "CSV Import",
                         description: "Import holdings from a CSV file. Supports Trade Republic and other broker exports.",
                         buttonTitle: "Import from CSV"
@@ -33,7 +33,7 @@ struct ImportView: View {
 
                     importCard(
                         icon: "plus.circle",
-                        iconColor: .orange,
+                        iconColor: FolioTheme.positive,
                         title: "Manual Entry",
                         description: "Add a holding manually with full control over all details.",
                         buttonTitle: "Add Manually"
@@ -45,7 +45,10 @@ struct ImportView: View {
                 }
                 .padding()
             }
+            .background(FolioTheme.background)
             .navigationTitle("Import")
+            .toolbarBackground(FolioTheme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .sheet(isPresented: $showScreenshotImport) {
                 ScreenshotImportView(
                     importViewModel: importViewModel,
@@ -101,9 +104,10 @@ struct ImportView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.headline)
+                        .foregroundStyle(.white)
                     Text(description)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                         .lineLimit(2)
                 }
             }
@@ -115,11 +119,11 @@ struct ImportView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(iconColor, in: RoundedRectangle(cornerRadius: 10))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(FolioTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var infoSection: some View {
@@ -127,7 +131,7 @@ struct ImportView: View {
             Label("How it works", systemImage: "info.circle")
                 .font(.caption)
                 .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
 
             VStack(alignment: .leading, spacing: 6) {
                 infoRow(number: "1", text: "Choose an import method above")
@@ -137,7 +141,7 @@ struct ImportView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(FolioTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func infoRow(number: String, text: String) -> some View {
@@ -146,12 +150,12 @@ struct ImportView: View {
                 .font(.caption)
                 .fontWeight(.bold)
                 .frame(width: 20, height: 20)
-                .background(.blue.opacity(0.15), in: Circle())
-                .foregroundStyle(.blue)
+                .background(FolioTheme.positive.opacity(0.15), in: Circle())
+                .foregroundStyle(FolioTheme.positive)
 
             Text(text)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
         }
     }
 }

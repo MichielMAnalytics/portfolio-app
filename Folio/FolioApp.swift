@@ -32,6 +32,7 @@ struct FolioApp: App {
             .onAppear {
                 checkBiometricState()
             }
+            .preferredColorScheme(.dark)
         }
         .modelContainer(sharedModelContainer)
     }
@@ -42,15 +43,16 @@ struct FolioApp: App {
 
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.blue)
+                .foregroundStyle(FolioTheme.positive)
 
             Text("Folio is Locked")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundStyle(.white)
 
             Text("Authenticate to access your portfolio")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
 
             Button {
                 authenticate()
@@ -60,12 +62,14 @@ struct FolioApp: App {
                     .fontWeight(.semibold)
                     .frame(width: 200)
                     .padding()
-                    .background(.blue, in: RoundedRectangle(cornerRadius: 14))
-                    .foregroundStyle(.white)
+                    .background(FolioTheme.positive, in: RoundedRectangle(cornerRadius: 14))
+                    .foregroundStyle(.black)
             }
 
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(FolioTheme.background)
         .onAppear {
             authenticate()
         }

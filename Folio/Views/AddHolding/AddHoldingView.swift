@@ -18,7 +18,9 @@ struct AddHoldingView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                .tint(FolioTheme.positive)
             }
+            .listRowBackground(FolioTheme.cardBackground)
 
             if viewModel.assetType == .crypto {
                 cryptoSearchSection
@@ -38,6 +40,7 @@ struct AddHoldingView: View {
                     TextField("Exchange", text: $viewModel.exchange)
                 }
             }
+            .listRowBackground(FolioTheme.cardBackground)
 
             Section("Position") {
                 HStack {
@@ -73,14 +76,18 @@ struct AddHoldingView: View {
                         Text(currency).tag(currency)
                     }
                 }
+                .tint(FolioTheme.positive)
             }
+            .listRowBackground(FolioTheme.cardBackground)
 
             Section("Date & Notes") {
                 DatePicker("Purchase Date", selection: $viewModel.purchaseDate, displayedComponents: .date)
+                    .tint(FolioTheme.positive)
 
                 TextField("Notes (optional)", text: $viewModel.notes, axis: .vertical)
                     .lineLimit(3...6)
             }
+            .listRowBackground(FolioTheme.cardBackground)
 
             if viewModel.isValid {
                 Section("Summary") {
@@ -97,6 +104,7 @@ struct AddHoldingView: View {
                             .fontWeight(.medium)
                     }
                 }
+                .listRowBackground(FolioTheme.cardBackground)
             }
 
             Section {
@@ -108,9 +116,13 @@ struct AddHoldingView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .fontWeight(.semibold)
+                .foregroundStyle(viewModel.isValid ? FolioTheme.positive : FolioTheme.labelGray)
                 .disabled(!viewModel.isValid)
             }
+            .listRowBackground(FolioTheme.cardBackground)
         }
+        .scrollContentBackground(.hidden)
+        .background(FolioTheme.background)
         .alert("Error", isPresented: .init(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -134,7 +146,7 @@ struct AddHoldingView: View {
                     ProgressView()
                     Text("Searching...")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                 }
             }
 
@@ -153,14 +165,15 @@ struct AddHoldingView: View {
                                     .foregroundStyle(.orange)
                             }
                             .frame(width: 24, height: 24)
+                            .clipShape(Circle())
 
                             VStack(alignment: .leading) {
                                 Text(coin.name)
                                     .font(.body)
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(.white)
                                 Text(coin.symbol.uppercased())
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(FolioTheme.labelGray)
                             }
 
                             Spacer()
@@ -168,17 +181,18 @@ struct AddHoldingView: View {
                             if let rank = coin.marketCapRank {
                                 Text("#\(rank)")
                                     .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(FolioTheme.labelGray)
                             }
 
                             if viewModel.selectedCoin?.id == coin.id {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(FolioTheme.positive)
                             }
                         }
                     }
                 }
             }
         }
+        .listRowBackground(FolioTheme.cardBackground)
     }
 }

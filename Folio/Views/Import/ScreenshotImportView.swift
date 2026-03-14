@@ -18,8 +18,11 @@ struct ScreenshotImportView: View {
                 Spacer()
             }
             .padding()
+            .background(FolioTheme.background)
             .navigationTitle("Screenshot Import")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(FolioTheme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") {
@@ -62,14 +65,15 @@ struct ScreenshotImportView: View {
         VStack(spacing: 20) {
             Image(systemName: "camera.viewfinder")
                 .font(.system(size: 64))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
 
             Text("Select a screenshot of your portfolio")
                 .font(.headline)
+                .foregroundStyle(.white)
 
             Text("The AI will extract your holdings from the screenshot automatically.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
                 .multilineTextAlignment(.center)
 
             PhotosPicker(selection: $importViewModel.selectedPhotoItem, matching: .screenshots) {
@@ -78,8 +82,8 @@ struct ScreenshotImportView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(.blue, in: RoundedRectangle(cornerRadius: 12))
-                    .foregroundStyle(.white)
+                    .background(FolioTheme.positive, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(.black)
             }
             .padding(.top, 8)
 
@@ -88,7 +92,8 @@ struct ScreenshotImportView: View {
                     .font(.body)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .background(FolioTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(.white)
             }
         }
         .padding(.top, 40)
@@ -103,16 +108,17 @@ struct ScreenshotImportView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(.secondary.opacity(0.3), lineWidth: 1)
+                        .stroke(FolioTheme.secondaryBackground, lineWidth: 1)
                 )
 
             if importViewModel.isProcessingScreenshot {
                 VStack(spacing: 12) {
                     ProgressView()
                         .scaleEffect(1.2)
+                        .tint(FolioTheme.positive)
                     Text("Analyzing screenshot...")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                 }
                 .padding()
             } else {
@@ -123,7 +129,8 @@ struct ScreenshotImportView: View {
                         Label("Change", systemImage: "arrow.triangle.2.circlepath")
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                            .background(FolioTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                            .foregroundStyle(.white)
                     }
 
                     Button {
@@ -135,8 +142,8 @@ struct ScreenshotImportView: View {
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(.blue, in: RoundedRectangle(cornerRadius: 12))
-                            .foregroundStyle(.white)
+                            .background(FolioTheme.positive, in: RoundedRectangle(cornerRadius: 12))
+                            .foregroundStyle(.black)
                     }
                 }
             }

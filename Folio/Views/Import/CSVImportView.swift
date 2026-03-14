@@ -23,8 +23,11 @@ struct CSVImportView: View {
                 Spacer()
             }
             .padding()
+            .background(FolioTheme.background)
             .navigationTitle("CSV Import")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(FolioTheme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") {
@@ -66,14 +69,15 @@ struct CSVImportView: View {
         VStack(spacing: 20) {
             Image(systemName: "doc.text")
                 .font(.system(size: 64))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
 
             Text("Import from CSV")
                 .font(.headline)
+                .foregroundStyle(.white)
 
             Text("Select a CSV file exported from your broker. Supports Trade Republic exports and generic CSV formats.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
                 .multilineTextAlignment(.center)
 
             Button {
@@ -84,8 +88,8 @@ struct CSVImportView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(.blue, in: RoundedRectangle(cornerRadius: 12))
-                    .foregroundStyle(.white)
+                    .background(FolioTheme.positive, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(.black)
             }
             .padding(.top, 8)
 
@@ -93,21 +97,22 @@ struct CSVImportView: View {
                 Text("Supported formats:")
                     .font(.caption)
                     .fontWeight(.medium)
+                    .foregroundStyle(.white)
 
                 ForEach(["Trade Republic CSV export", "Generic CSV with headers", "Semicolon or comma separated"], id: \.self) { format in
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(FolioTheme.positive)
                         Text(format)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(FolioTheme.labelGray)
                     }
                 }
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background(FolioTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
         }
         .padding(.top, 40)
     }
@@ -118,9 +123,10 @@ struct CSVImportView: View {
                 VStack(alignment: .leading) {
                     Text("\(importViewModel.parsedCSVHoldings.count) holdings found")
                         .font(.headline)
+                        .foregroundStyle(.white)
                     Text("\(importViewModel.csvRows.count) rows parsed")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                 }
                 Spacer()
 
@@ -128,6 +134,7 @@ struct CSVImportView: View {
                     showColumnMapping = true
                 }
                 .font(.caption)
+                .foregroundStyle(FolioTheme.positive)
             }
 
             List {
@@ -137,27 +144,30 @@ struct CSVImportView: View {
                             Text(holding.name)
                                 .font(.body)
                                 .fontWeight(.medium)
+                                .foregroundStyle(.white)
                             Spacer()
                             Text(CurrencyFormatter.formatQuantity(holding.quantity))
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(FolioTheme.labelGray)
                         }
                         HStack {
                             if !holding.isin.isEmpty {
                                 Text(holding.isin)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(FolioTheme.labelGray)
                             }
                             Spacer()
                             Text(CurrencyFormatter.formatPrice(holding.price, currency: holding.currency))
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(FolioTheme.labelGray)
                         }
                     }
                     .padding(.vertical, 2)
+                    .listRowBackground(FolioTheme.cardBackground)
                 }
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
             .frame(maxHeight: 400)
 
             HStack(spacing: 12) {
@@ -167,7 +177,8 @@ struct CSVImportView: View {
                     Text("Reset")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        .background(FolioTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundStyle(.white)
                 }
 
                 Button {
@@ -182,8 +193,8 @@ struct CSVImportView: View {
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(.blue, in: RoundedRectangle(cornerRadius: 12))
-                        .foregroundStyle(.white)
+                        .background(FolioTheme.positive, in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundStyle(.black)
                 }
             }
         }
@@ -197,10 +208,11 @@ struct CSVImportView: View {
 
             Text("No holdings could be extracted")
                 .font(.headline)
+                .foregroundStyle(.white)
 
             Text("Try adjusting the column mapping or use a different CSV file.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FolioTheme.labelGray)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 12) {
@@ -209,11 +221,13 @@ struct CSVImportView: View {
                     showFilePicker = true
                 }
                 .buttonStyle(.bordered)
+                .tint(FolioTheme.positive)
 
                 Button("Adjust Mapping") {
                     showColumnMapping = true
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(FolioTheme.positive)
             }
         }
         .padding(.top, 40)
@@ -225,7 +239,7 @@ struct CSVImportView: View {
                 Section("Column Mapping") {
                     Text("Assign CSV columns to the correct fields")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
 
                     columnPicker("Name / Asset", selection: $importViewModel.columnMapping.nameColumn)
                     columnPicker("Symbol", selection: $importViewModel.columnMapping.symbolColumn)
@@ -237,7 +251,10 @@ struct CSVImportView: View {
                     columnPicker("Type (Buy/Sell)", selection: $importViewModel.columnMapping.typeColumn)
                     columnPicker("Currency", selection: $importViewModel.columnMapping.currencyColumn)
                 }
+                .listRowBackground(FolioTheme.cardBackground)
             }
+            .scrollContentBackground(.hidden)
+            .background(FolioTheme.background)
             .navigationTitle("Column Mapping")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -246,6 +263,7 @@ struct CSVImportView: View {
                         importViewModel.remapCSV()
                         showColumnMapping = false
                     }
+                    .foregroundStyle(FolioTheme.positive)
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") {
@@ -263,6 +281,7 @@ struct CSVImportView: View {
                 Text(header).tag(index as Int?)
             }
         }
+        .tint(FolioTheme.positive)
     }
 
     private var csvReviewSheet: some View {
@@ -272,16 +291,20 @@ struct CSVImportView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(holding.name)
                             .fontWeight(.medium)
+                            .foregroundStyle(.white)
                         HStack {
                             Text("Qty: \(CurrencyFormatter.formatQuantity(holding.quantity))")
                             Spacer()
                             Text(CurrencyFormatter.formatPrice(holding.price, currency: holding.currency))
                         }
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                     }
+                    .listRowBackground(FolioTheme.cardBackground)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(FolioTheme.background)
             .navigationTitle("Review")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -291,6 +314,7 @@ struct CSVImportView: View {
                         importViewModel.showCSVReview = false
                         dismiss()
                     }
+                    .foregroundStyle(FolioTheme.positive)
                 }
             }
         }

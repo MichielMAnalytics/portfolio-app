@@ -11,8 +11,9 @@ struct ExtractedHoldingsReviewView: View {
                 Section {
                     Text("Review the extracted holdings below. Tap to edit any field before importing.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                 }
+                .listRowBackground(FolioTheme.cardBackground)
 
                 Section("Extracted Holdings (\(holdings.count))") {
                     ForEach($holdings) { $holding in
@@ -20,6 +21,7 @@ struct ExtractedHoldingsReviewView: View {
                     }
                     .onDelete(perform: deleteHoldings)
                 }
+                .listRowBackground(FolioTheme.cardBackground)
 
                 if !holdings.isEmpty {
                     Section {
@@ -28,11 +30,17 @@ struct ExtractedHoldingsReviewView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .fontWeight(.semibold)
+                        .foregroundStyle(FolioTheme.positive)
                     }
+                    .listRowBackground(FolioTheme.cardBackground)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(FolioTheme.background)
             .navigationTitle("Review Import")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(FolioTheme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") {
@@ -53,13 +61,14 @@ struct ExtractedHoldingsReviewView: View {
                     ))
                     .font(.body)
                     .fontWeight(.medium)
+                    .foregroundStyle(.white)
 
                     TextField("Symbol", text: Binding(
                         get: { holding.wrappedValue.symbol ?? "" },
                         set: { holding.wrappedValue.symbol = $0 }
                     ))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(FolioTheme.labelGray)
                     .textInputAutocapitalization(.characters)
                 }
 
@@ -69,6 +78,7 @@ struct ExtractedHoldingsReviewView: View {
                     Text(CurrencyFormatter.format(value))
                         .font(.body)
                         .fontWeight(.semibold)
+                        .foregroundStyle(.white)
                 }
             }
 
@@ -76,7 +86,7 @@ struct ExtractedHoldingsReviewView: View {
                 HStack(spacing: 4) {
                     Text("Qty:")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                     TextField("0", value: Binding(
                         get: { holding.wrappedValue.quantity ?? 0 },
                         set: { holding.wrappedValue.quantity = $0 }
@@ -89,7 +99,7 @@ struct ExtractedHoldingsReviewView: View {
                 HStack(spacing: 4) {
                     Text("Price:")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(FolioTheme.labelGray)
                     TextField("0.00", value: Binding(
                         get: { holding.wrappedValue.currentPrice ?? 0 },
                         set: { holding.wrappedValue.currentPrice = $0 }

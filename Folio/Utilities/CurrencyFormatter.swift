@@ -15,6 +15,16 @@ struct CurrencyFormatter {
         return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 
+    /// Formats just the numeric portion without currency symbol, using locale grouping.
+    static func formatBareNumber(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        formatter.usesGroupingSeparator = true
+        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
+    }
+
     static func formatLarge(_ value: Double, currency: String = "USD") -> String {
         if abs(value) >= 1_000_000_000 {
             return formatCompact(value / 1_000_000_000, suffix: "B", currency: currency)

@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// Embedded holdings list section used within DashboardView.
+/// No longer a standalone tab -- kept as an extracted component for reuse.
 struct HoldingsListView: View {
     @Bindable var viewModel: PortfolioViewModel
     let currency: String
@@ -44,16 +46,6 @@ struct HoldingsListView: View {
         return holdings
     }
 
-    private var groupedHoldings: [(AssetType, [Holding])] {
-        let grouped = Dictionary(grouping: filteredHoldings) { $0.assetType }
-        return grouped
-            .sorted { pair1, pair2 in
-                let total1 = pair1.value.reduce(0) { $0 + $1.totalValue }
-                let total2 = pair2.value.reduce(0) { $0 + $1.totalValue }
-                return total1 > total2
-            }
-    }
-
     var body: some View {
         NavigationStack {
             Group {
@@ -63,6 +55,7 @@ struct HoldingsListView: View {
                     holdingsList
                 }
             }
+            .background(FolioTheme.background)
             .navigationTitle("Holdings")
             .searchable(text: $searchText, prompt: "Search holdings")
             .toolbar {
@@ -71,6 +64,7 @@ struct HoldingsListView: View {
                         showAddHolding = true
                     } label: {
                         Image(systemName: "plus")
+                            .foregroundStyle(FolioTheme.positive)
                     }
                 }
 
@@ -119,6 +113,7 @@ struct HoldingsListView: View {
                         }
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease.circle")
+                            .foregroundStyle(FolioTheme.positive)
                     }
                 }
             }
@@ -144,59 +139,33 @@ struct HoldingsListView: View {
 
     private var holdingsList: some View {
         List {
-            if selectedAssetType != nil {
-                ForEach(filteredHoldings) { holding in
-                    NavigationLink {
-                        HoldingDetailView(
-                            holding: holding,
-                            currency: currency,
-                            onSave: { viewModel.updateHolding($0) },
-                            onDelete: { viewModel.deleteHolding($0) }
-                        )
-                    } label: {
-                        HoldingRowView(holding: holding, currency: currency)
-                    }
+            ForEach(filteredHoldings) { holding in
+                NavigationLink {
+                    HoldingDetailView(
+                        holding: holding,
+                        currency: currency,
+                        onSave: { viewModel.updateHolding($0) },
+                        onDelete: { viewModel.deleteHolding($0) }
+                    )
+                } label: {
+                    HoldingRowView(holding: holding, currency: currency)
                 }
-                .onDelete(perform: deleteHoldings)
-            } else {
-                ForEach(groupedHoldings, id: \.0) { assetType, holdings in
-                    Section {
-                        ForEach(holdings) { holding in
-                            NavigationLink {
-                                HoldingDetailView(
-                                    holding: holding,
-                                    currency: currency,
-                                    onSave: { viewModel.updateHolding($0) },
-                                    onDelete: { viewModel.deleteHolding($0) }
-                                )
-                            } label: {
-                                HoldingRowView(holding: holding, currency: currency)
-                            }
-                        }
-                    } header: {
-                        HStack {
-                            Image(systemName: assetType.sfSymbol)
-                                .foregroundStyle(assetType.color)
-                            Text(assetType.displayName)
-                            Spacer()
-                            Text(CurrencyFormatter.format(
-                                holdings.reduce(0) { $0 + $1.totalValue },
-                                currency: currency
-                            ))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-                    }
-                }
+                .listRowBackground(FolioTheme.cardBackground)
             }
+            .onDelete(perform: deleteHoldings)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(FolioTheme.background)
     }
 
     private var emptyState: some View {
         ContentUnavailableView {
             Label("No Holdings", systemImage: "tray")
+                .foregroundStyle(FolioTheme.labelGray)
         } description: {
             Text("Add your first holding to start tracking your portfolio.")
+                .foregroundStyle(FolioTheme.labelGray)
         } actions: {
             Button {
                 showAddHolding = true
@@ -204,6 +173,7 @@ struct HoldingsListView: View {
                 Text("Add Holding")
             }
             .buttonStyle(.borderedProminent)
+            .tint(FolioTheme.positive)
         }
     }
 
