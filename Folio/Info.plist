@@ -4,6 +4,8 @@
 <dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Folio uses Face ID to protect access to your portfolio data.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Folio uses the camera to photograph your portfolio screen for AI-powered holdings extraction.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Folio needs access to your photo library to import portfolio screenshots for AI-powered holdings extraction.</string>
 </dict>

@@ -1,3 +1,6 @@
 Folio.xcodeproj/project.xcworkspace/xcuserdata/
 Folio.xcodeproj/xcuserdata/
 *.xcuserstate
+Folio/.env.local
+test_screenshot_extraction.swift
+*.png

@@ -115,13 +115,29 @@ final class ImportViewModel {
                 symbol: extracted.symbol ?? "",
                 quantity: extracted.quantity ?? 0,
                 purchasePrice: extracted.currentPrice ?? 0,
-                purchaseCurrency: "USD",
+                purchaseCurrency: extracted.currency ?? "USD",
                 currentPrice: extracted.currentPrice ?? 0,
-                assetType: .stock,
+                assetType: guessAssetTypeFromExtracted(extracted),
                 purchaseDate: Date(),
-                notes: "Imported from screenshot"
+                notes: "Imported from screenshot",
+                exchange: extracted.exchange ?? "",
+                isin: extracted.isin ?? ""
             )
         }
+    }
+
+    private func guessAssetTypeFromExtracted(_ extracted: ExtractedHolding) -> AssetType {
+        let name = (extracted.name ?? "").lowercased()
+        if name.contains("etf") || name.contains("ucits") || name.contains("tracker") || name.contains("ishares") || name.contains("vanguard") {
+            return .etf
+        }
+        if name.contains("etc") || name.contains("nickel") || name.contains("gold") || name.contains("silver") {
+            return .commodity
+        }
+        if name.contains("bond") || name.contains("anleihe") {
+            return .bond
+        }
+        return .stock
     }
 
     func createHoldingsFromCSV() -> [Holding] {

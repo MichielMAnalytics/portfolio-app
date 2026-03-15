@@ -29,12 +29,15 @@ struct ExtractedHolding: Codable, Identifiable {
     var id: UUID = UUID()
     var name: String?
     var symbol: String?
+    var isin: String?
     var quantity: Double?
     var currentPrice: Double?
     var totalValue: Double?
+    var exchange: String?
+    var currency: String?
 
     enum CodingKeys: String, CodingKey {
-        case name, symbol, quantity, currentPrice, totalValue
+        case name, symbol, isin, quantity, currentPrice, totalValue, exchange, currency
     }
 }
 
@@ -43,10 +46,12 @@ actor LLMService {
 
     private let extractionPrompt = """
     Analyze this screenshot of a financial portfolio/brokerage account. Extract all visible holdings/positions. \
-    For each holding, extract: name (full asset name), symbol (ticker/symbol), quantity (number of units held), \
-    currentPrice (current price per unit), totalValue (total position value). Return ONLY a JSON array of objects \
-    with these fields. If a field is not visible, use null. Example: \
-    [{"name": "Apple Inc.", "symbol": "AAPL", "quantity": 10, "currentPrice": 178.50, "totalValue": 1785.00}]
+    For each holding, extract: name (full asset name), symbol (ticker/symbol), isin (ISIN code if visible), \
+    quantity (number of units held), currentPrice (current price per unit), totalValue (total position value), \
+    exchange (exchange name/code if visible), currency (currency code if visible). \
+    Return ONLY a JSON array of objects with these fields. If a field is not visible, use null. \
+    Example: [{"name": "Apple Inc.", "symbol": "AAPL", "isin": "US0378331005", "quantity": 10, \
+    "currentPrice": 178.50, "totalValue": 1785.00, "exchange": "NASDAQ", "currency": "USD"}]
     """
 
     private init() {}

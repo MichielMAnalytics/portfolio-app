@@ -22,26 +22,43 @@ actor YahooFinanceService {
 
     private init() {}
 
-    // MARK: - Quotes
+    // MARK: - Quotes (via v8 chart endpoint — v7 is blocked)
 
     func fetchQuotes(symbols: [String]) async throws -> [String: YahooQuote] {
         guard !symbols.isEmpty else { return [:] }
 
-        let symbolString = symbols.joined(separator: ",")
-        let cacheKey = symbolString
+        let cacheKey = symbols.sorted().joined(separator: ",")
 
         if let cached = quoteCache[cacheKey], !cached.isExpired {
             return cached.data
         }
 
-        var components = URLComponents(string: "\(baseURL)/v7/finance/quote")!
-        components.queryItems = [
-            URLQueryItem(name: "symbols", value: symbolString),
-            URLQueryItem(name: "fields", value: "symbol,shortName,longName,regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketPreviousClose,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,marketCap,fiftyTwoWeekHigh,fiftyTwoWeekLow,currency,exchangeTimezoneName,exchange,quoteType"),
-        ]
+        var result: [String: YahooQuote] = [:]
 
-        guard let url = components.url else {
-            throw YahooFinanceError.invalidURL
+        // Fetch each symbol via v8 chart (reliable, no auth needed)
+        await withTaskGroup(of: (String, YahooQuote?).self) { group in
+            for symbol in symbols {
+                group.addTask {
+                    let quote = try? await self.fetchQuoteViaChart(symbol: symbol)
+                    return (symbol.uppercased(), quote)
+                }
+            }
+
+            for await (sym, quote) in group {
+                if let quote {
+                    result[sym] = quote
+                }
+            }
+        }
+
+        quoteCache[cacheKey] = CachedData(data: result, timestamp: Date())
+        return result
+    }
+
+    /// Fetches a single quote using the v8 chart endpoint meta data.
+    private func fetchQuoteViaChart(symbol: String) async throws -> YahooQuote? {
+        guard let url = URL(string: "\(chartURL)/\(symbol)?range=1d&interval=1d") else {
+            return nil
         }
 
         var request = URLRequest(url: url)
@@ -49,27 +66,47 @@ actor YahooFinanceService {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw YahooFinanceError.invalidResponse
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            return nil
         }
 
-        guard httpResponse.statusCode == 200 else {
-            if httpResponse.statusCode == 429 {
-                throw YahooFinanceError.rateLimited
-            }
-            throw YahooFinanceError.httpError(httpResponse.statusCode)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let chart = json?["chart"] as? [String: Any],
+              let results = chart["result"] as? [[String: Any]],
+              let first = results.first,
+              let meta = first["meta"] as? [String: Any] else {
+            return nil
         }
 
-        let decoder = JSONDecoder()
-        let quoteResponse = try decoder.decode(YahooQuoteResponse.self, from: data)
+        let price = meta["regularMarketPrice"] as? Double
+        let previousClose = meta["chartPreviousClose"] as? Double ?? meta["previousClose"] as? Double
+        let currency = meta["currency"] as? String
+        let exchangeName = meta["exchangeName"] as? String
+        let shortName = meta["shortName"] as? String ?? meta["longName"] as? String
+        let sym = meta["symbol"] as? String ?? symbol
 
-        var result: [String: YahooQuote] = [:]
-        for quote in quoteResponse.quoteResponse.result {
-            result[quote.symbol.uppercased()] = quote
-        }
+        let change: Double? = if let p = price, let pc = previousClose { p - pc } else { nil }
+        let changePercent: Double? = if let c = change, let pc = previousClose, pc > 0 { (c / pc) * 100 } else { nil }
 
-        quoteCache[cacheKey] = CachedData(data: result, timestamp: Date())
-        return result
+        return YahooQuote(
+            symbol: sym,
+            shortName: shortName,
+            longName: nil,
+            regularMarketPrice: price,
+            regularMarketChange: change,
+            regularMarketChangePercent: changePercent,
+            regularMarketPreviousClose: previousClose,
+            regularMarketOpen: nil,
+            regularMarketDayHigh: nil,
+            regularMarketDayLow: nil,
+            regularMarketVolume: nil,
+            marketCap: nil,
+            fiftyTwoWeekHigh: nil,
+            fiftyTwoWeekLow: nil,
+            currency: currency,
+            exchange: exchangeName,
+            quoteType: nil
+        )
     }
 
     func fetchQuote(symbol: String) async throws -> YahooQuote? {
@@ -124,7 +161,7 @@ actor YahooFinanceService {
 
         let results = searchResponse.quotes.filter { result in
             let type = result.quoteType?.uppercased() ?? ""
-            return type == "EQUITY" || type == "ETF" || type == "MUTUALFUND" || type == "INDEX"
+            return type == "EQUITY" || type == "ETF" || type == "MUTUALFUND" || type == "INDEX" || type == "COMMODITY" || type == "CURRENCY" || !type.isEmpty
         }
 
         searchCache[lowercased] = CachedData(data: results, timestamp: Date())
@@ -256,44 +293,57 @@ actor YahooFinanceService {
     private func guessSuffixes(exchange: String) -> [String] {
         let ex = exchange.lowercased()
 
-        // Map common exchange names/codes to Yahoo Finance suffixes
-        if ex.contains("xetra") || ex.contains("frankfurt") || ex.contains("fra") || ex.contains("ger") {
+        // DeGiro exchange codes
+        if ex == "eam" { return [".AS", ""] }       // Euronext Amsterdam
+        if ex == "xet" { return [".DE", ""] }        // Xetra
+        if ex == "fra" { return [".DE", ""] }        // Frankfurt
+        if ex == "ndq" { return [""] }               // NASDAQ
+        if ex == "nsy" || ex == "nys" { return [""] } // NYSE
+        if ex == "mil" { return [".MI", ""] }        // Milan
+        if ex == "epa" { return [".PA", ""] }        // Euronext Paris
+        if ex == "ebr" { return [".BR", ""] }        // Euronext Brussels
+        if ex == "lse" { return [".L", ""] }         // London
+        if ex == "tse" { return [".TO", ""] }        // Toronto
+        if ex == "hkex" { return [".HK", ""] }       // Hong Kong
+
+        // Full exchange names
+        if ex.contains("xetra") || ex.contains("frankfurt") || ex.contains("ger") {
             return [".DE", ""]
         }
-        if ex.contains("amsterdam") || ex.contains("euronext amsterdam") || ex.contains("ams") {
+        if ex.contains("amsterdam") || ex.contains("euronext amsterdam") {
             return [".AS", ""]
         }
-        if ex.contains("paris") || ex.contains("euronext paris") || ex.contains("epa") {
+        if ex.contains("paris") || ex.contains("euronext paris") {
             return [".PA", ""]
         }
-        if ex.contains("brussels") || ex.contains("euronext brussels") || ex.contains("ebr") {
+        if ex.contains("brussels") || ex.contains("euronext brussels") {
             return [".BR", ""]
         }
         if ex.contains("lisbon") || ex.contains("euronext lisbon") {
             return [".LS", ""]
         }
-        if ex.contains("london") || ex.contains("lse") || ex.contains("lon") {
+        if ex.contains("london") {
             return [".L", ""]
         }
-        if ex.contains("milan") || ex.contains("borsa italiana") || ex.contains("mil") || ex.contains("bit") {
+        if ex.contains("milan") || ex.contains("borsa italiana") {
             return [".MI", ""]
         }
-        if ex.contains("madrid") || ex.contains("bme") || ex.contains("mcx") {
+        if ex.contains("madrid") || ex.contains("bme") {
             return [".MC", ""]
         }
         if ex.contains("toronto") || ex.contains("tsx") {
             return [".TO", ""]
         }
-        if ex.contains("hong kong") || ex.contains("hkex") {
+        if ex.contains("hong kong") {
             return [".HK", ""]
         }
-        if ex.contains("tokyo") || ex.contains("tse") || ex.contains("jpx") {
+        if ex.contains("tokyo") || ex.contains("jpx") {
             return [".T", ""]
         }
         if ex.contains("sydney") || ex.contains("asx") {
             return [".AX", ""]
         }
-        if ex.contains("nyse") || ex.contains("nasdaq") || ex.contains("us") || ex.contains("new york") {
+        if ex.contains("nyse") || ex.contains("nasdaq") || ex.contains("new york") {
             return [""]
         }
         if ex.contains("euronext") {
@@ -301,7 +351,7 @@ actor YahooFinanceService {
         }
 
         // Default: try no suffix first, then common European ones
-        return ["", ".DE", ".AS", ".PA", ".L"]
+        return ["", ".DE", ".AS", ".MI", ".PA", ".L"]
     }
 
     func clearCache() {
