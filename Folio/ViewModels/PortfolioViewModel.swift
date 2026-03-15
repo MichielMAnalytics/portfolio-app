@@ -103,6 +103,15 @@ final class PortfolioViewModel {
         } catch {
             errorMessage = "Failed to save holdings: \(error.localizedDescription)"
         }
+
+        // Resolve Yahoo symbols in background for non-crypto holdings
+        Task {
+            let toResolve = newHoldings.filter { $0.assetType != .crypto && $0.yahooSymbol.isEmpty }
+            await resolveUnknownSymbols(toResolve)
+            if let modelContext = self.modelContext {
+                try? modelContext.save()
+            }
+        }
     }
 
     func deleteHolding(_ holding: Holding) {
@@ -180,13 +189,18 @@ final class PortfolioViewModel {
         let stockHoldings = holdings.filter { $0.assetType != .crypto && $0.assetType != .cash }
         guard !stockHoldings.isEmpty else { return }
 
-        let symbols = Array(Set(stockHoldings.map { $0.symbol.uppercased() }))
+        // First, resolve any holdings that don't have a yahooSymbol yet
+        await resolveUnknownSymbols(stockHoldings)
+
+        // Now fetch prices using the resolved symbols
+        let symbols = Array(Set(stockHoldings.map { $0.priceSymbol.uppercased() }))
+        guard !symbols.isEmpty else { return }
 
         do {
             let quotes = try await YahooFinanceService.shared.fetchQuotes(symbols: symbols)
 
             for holding in stockHoldings {
-                if let quote = quotes[holding.symbol.uppercased()],
+                if let quote = quotes[holding.priceSymbol.uppercased()],
                    let price = quote.regularMarketPrice {
                     holding.currentPrice = price
                 }
@@ -195,6 +209,23 @@ final class PortfolioViewModel {
             let existing = errorMessage ?? ""
             let stockError = "Failed to refresh stock prices: \(error.localizedDescription)"
             errorMessage = existing.isEmpty ? stockError : "\(existing)\n\(stockError)"
+        }
+    }
+
+    /// Resolves Yahoo Finance symbols for holdings that don't have one yet.
+    private func resolveUnknownSymbols(_ holdings: [Holding]) async {
+        let unresolved = holdings.filter { $0.yahooSymbol.isEmpty }
+        guard !unresolved.isEmpty else { return }
+
+        for holding in unresolved {
+            if let resolved = await YahooFinanceService.shared.resolveSymbol(
+                symbol: holding.symbol,
+                name: holding.name,
+                isin: holding.isin,
+                exchange: holding.exchange
+            ) {
+                holding.yahooSymbol = resolved
+            }
         }
     }
 }

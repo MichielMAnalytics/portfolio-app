@@ -15,9 +15,16 @@ final class Holding {
     var notes: String
     var exchange: String
     var isin: String
+    var yahooSymbol: String
 
     @Relationship(inverse: \Portfolio.holdings)
     var portfolio: Portfolio?
+
+    /// The ticker to use for Yahoo Finance price lookups.
+    /// Falls back to symbol if yahooSymbol is empty.
+    var priceSymbol: String {
+        yahooSymbol.isEmpty ? symbol : yahooSymbol
+    }
 
     var assetType: AssetType {
         get { AssetType(rawValue: assetTypeRaw) ?? .other }
@@ -53,7 +60,8 @@ final class Holding {
         purchaseDate: Date = Date(),
         notes: String = "",
         exchange: String = "",
-        isin: String = ""
+        isin: String = "",
+        yahooSymbol: String = ""
     ) {
         self.id = id
         self.name = name
@@ -67,5 +75,6 @@ final class Holding {
         self.notes = notes
         self.exchange = exchange
         self.isin = isin
+        self.yahooSymbol = yahooSymbol
     }
 }

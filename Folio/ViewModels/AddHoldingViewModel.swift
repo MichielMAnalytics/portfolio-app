@@ -15,6 +15,7 @@ final class AddHoldingViewModel {
     var notes: String = ""
     var exchange: String = ""
     var isin: String = ""
+    var yahooSymbol: String = ""
 
     var cryptoSearchQuery: String = ""
     var cryptoSearchResults: [CoinSearchResult] = []
@@ -123,7 +124,8 @@ final class AddHoldingViewModel {
             purchaseDate: purchaseDate,
             notes: notes.trimmingCharacters(in: .whitespaces),
             exchange: exchange.trimmingCharacters(in: .whitespaces),
-            isin: isin.trimmingCharacters(in: .whitespaces)
+            isin: isin.trimmingCharacters(in: .whitespaces),
+            yahooSymbol: yahooSymbol
         )
     }
 
@@ -159,6 +161,7 @@ final class AddHoldingViewModel {
         selectedStock = stock
         name = stock.displayName
         symbol = stock.symbol
+        yahooSymbol = stock.symbol  // Yahoo search already returns the correct symbol
         exchange = stock.exchDisp ?? stock.exchange ?? ""
         assetType = stock.assetType
         stockSearchQuery = stock.displayName
@@ -207,6 +210,7 @@ final class AddHoldingViewModel {
         stockSearchQuery = ""
         stockSearchResults = []
         selectedStock = nil
+        yahooSymbol = ""
         errorMessage = nil
     }
 
@@ -222,6 +226,7 @@ final class AddHoldingViewModel {
         notes = holding.notes
         exchange = holding.exchange
         isin = holding.isin
+        yahooSymbol = holding.yahooSymbol
     }
 
     func applyChanges(to holding: Holding) {
@@ -236,5 +241,6 @@ final class AddHoldingViewModel {
         holding.notes = notes.trimmingCharacters(in: .whitespaces)
         holding.exchange = exchange.trimmingCharacters(in: .whitespaces)
         holding.isin = isin.trimmingCharacters(in: .whitespaces)
+        holding.yahooSymbol = yahooSymbol
     }
 }

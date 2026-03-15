@@ -190,6 +190,120 @@ actor YahooFinanceService {
         return points
     }
 
+    // MARK: - Symbol Resolution
+
+    /// Resolves a ticker/name/ISIN to the best Yahoo Finance symbol.
+    /// Tries multiple strategies: direct quote, search by symbol, search by ISIN, search by name.
+    func resolveSymbol(symbol: String, name: String = "", isin: String = "", exchange: String = "") async -> String? {
+        // Strategy 1: If symbol already has a suffix (e.g., VWCE.DE), try it directly
+        if symbol.contains(".") {
+            if let quote = try? await fetchQuote(symbol: symbol), quote.regularMarketPrice != nil {
+                return symbol
+            }
+        }
+
+        // Strategy 2: Try ISIN search first (most precise for European securities)
+        if !isin.isEmpty {
+            if let results = try? await search(query: isin), let first = results.first {
+                return first.symbol
+            }
+        }
+
+        // Strategy 3: Try symbol + common exchange suffixes based on exchange name
+        let suffixes = guessSuffixes(exchange: exchange)
+        for suffix in suffixes {
+            let candidate = suffix.isEmpty ? symbol.uppercased() : "\(symbol.uppercased())\(suffix)"
+            if let quote = try? await fetchQuote(symbol: candidate), quote.regularMarketPrice != nil {
+                return candidate
+            }
+        }
+
+        // Strategy 4: Search by symbol
+        if let results = try? await search(query: symbol), let first = results.first {
+            return first.symbol
+        }
+
+        // Strategy 5: Search by name
+        if !name.isEmpty {
+            if let results = try? await search(query: name), let first = results.first {
+                return first.symbol
+            }
+        }
+
+        return nil
+    }
+
+    /// Batch-resolve symbols for multiple holdings.
+    func resolveSymbols(for holdings: [(symbol: String, name: String, isin: String, exchange: String)]) async -> [String: String] {
+        var resolved: [String: String] = [:]
+
+        for holding in holdings {
+            if let yahooSymbol = await resolveSymbol(
+                symbol: holding.symbol,
+                name: holding.name,
+                isin: holding.isin,
+                exchange: holding.exchange
+            ) {
+                resolved[holding.symbol] = yahooSymbol
+            }
+            // Small delay to avoid rate limiting
+            try? await Task.sleep(for: .milliseconds(200))
+        }
+
+        return resolved
+    }
+
+    private func guessSuffixes(exchange: String) -> [String] {
+        let ex = exchange.lowercased()
+
+        // Map common exchange names/codes to Yahoo Finance suffixes
+        if ex.contains("xetra") || ex.contains("frankfurt") || ex.contains("fra") || ex.contains("ger") {
+            return [".DE", ""]
+        }
+        if ex.contains("amsterdam") || ex.contains("euronext amsterdam") || ex.contains("ams") {
+            return [".AS", ""]
+        }
+        if ex.contains("paris") || ex.contains("euronext paris") || ex.contains("epa") {
+            return [".PA", ""]
+        }
+        if ex.contains("brussels") || ex.contains("euronext brussels") || ex.contains("ebr") {
+            return [".BR", ""]
+        }
+        if ex.contains("lisbon") || ex.contains("euronext lisbon") {
+            return [".LS", ""]
+        }
+        if ex.contains("london") || ex.contains("lse") || ex.contains("lon") {
+            return [".L", ""]
+        }
+        if ex.contains("milan") || ex.contains("borsa italiana") || ex.contains("mil") || ex.contains("bit") {
+            return [".MI", ""]
+        }
+        if ex.contains("madrid") || ex.contains("bme") || ex.contains("mcx") {
+            return [".MC", ""]
+        }
+        if ex.contains("toronto") || ex.contains("tsx") {
+            return [".TO", ""]
+        }
+        if ex.contains("hong kong") || ex.contains("hkex") {
+            return [".HK", ""]
+        }
+        if ex.contains("tokyo") || ex.contains("tse") || ex.contains("jpx") {
+            return [".T", ""]
+        }
+        if ex.contains("sydney") || ex.contains("asx") {
+            return [".AX", ""]
+        }
+        if ex.contains("nyse") || ex.contains("nasdaq") || ex.contains("us") || ex.contains("new york") {
+            return [""]
+        }
+        if ex.contains("euronext") {
+            return [".AS", ".PA", ".BR", ".DE", ""]
+        }
+
+        // Default: try no suffix first, then common European ones
+        return ["", ".DE", ".AS", ".PA", ".L"]
+    }
+
     func clearCache() {
         quoteCache.removeAll()
         searchCache.removeAll()
