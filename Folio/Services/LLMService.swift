@@ -77,7 +77,7 @@ actor LLMService {
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
         let body: [String: Any] = [
-            "model": "claude-sonnet-4-6-20250610",
+            "model": "claude-sonnet-4-6",
             "max_tokens": 4096,
             "messages": [
                 [

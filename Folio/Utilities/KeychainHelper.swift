@@ -2,7 +2,8 @@ import Foundation
 import Security
 
 struct KeychainHelper {
-    private static let serviceName = "com.folio.app"
+    private static let serviceName = "com.michielvoortman.folio"
+    private static let udPrefix = "folio_secure_"
 
     enum KeychainKey: String {
         case claudeAPIKey = "claude_api_key"
@@ -11,7 +12,12 @@ struct KeychainHelper {
         case selectedProvider = "selected_provider"
     }
 
+    // MARK: - Save (Keychain + UserDefaults backup)
+
     static func save(_ value: String, for key: KeychainKey) -> Bool {
+        // Always save to UserDefaults as backup (survives reinstalls)
+        UserDefaults.standard.set(value, forKey: udPrefix + key.rawValue)
+
         guard let data = value.data(using: .utf8) else { return false }
 
         let query: [String: Any] = [
@@ -34,6 +40,8 @@ struct KeychainHelper {
         return status == errSecSuccess
     }
 
+    // MARK: - Retrieve (Keychain first, UserDefaults fallback)
+
     static func retrieve(for key: KeychainKey) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -46,16 +54,27 @@ struct KeychainHelper {
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let value = String(data: data, encoding: .utf8) else {
-            return nil
+        if status == errSecSuccess,
+           let data = result as? Data,
+           let value = String(data: data, encoding: .utf8),
+           !value.isEmpty {
+            return value
         }
 
-        return value
+        // Fallback: check UserDefaults backup
+        if let backup = UserDefaults.standard.string(forKey: udPrefix + key.rawValue),
+           !backup.isEmpty {
+            // Restore to Keychain
+            _ = save(backup, for: key)
+            return backup
+        }
+
+        return nil
     }
 
     static func delete(for key: KeychainKey) -> Bool {
+        UserDefaults.standard.removeObject(forKey: udPrefix + key.rawValue)
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
@@ -67,17 +86,10 @@ struct KeychainHelper {
     }
 
     static func exists(for key: KeychainKey) -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: key.rawValue,
-            kSecReturnData as String: false,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-
-        let status = SecItemCopyMatching(query as CFDictionary, nil)
-        return status == errSecSuccess
+        retrieve(for: key) != nil
     }
+
+    // MARK: - LLM Provider Helpers
 
     static func saveAPIKey(_ key: String, for provider: LLMProvider) -> Bool {
         let keychainKey: KeychainKey
